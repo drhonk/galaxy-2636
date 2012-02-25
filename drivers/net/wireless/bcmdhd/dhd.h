@@ -236,6 +236,24 @@ typedef struct dhd_cmn {
 	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)) && defined(CONFIG_PM_SLEEP)
 
 	#define DHD_PM_RESUME_WAIT_INIT(a) DECLARE_WAIT_QUEUE_HEAD(a);
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+/* increase wait time because we've seen WiFi sometimes time out if
+ * something causes system resume to take longer (maybe another Samsung
+ * driver doing something more in it's resume function than it should),
+ * and that causes the rest of the WiFi driver to get into a bad state
+ * and wind up spinning taking all the CPU time.  Now we have about a
+ * 10ms delay * 1000 retries, or 10 seconds.
+ */
+        #define _DHD_PM_RESUME_WAIT(a, b) do {\
+                        int retry = 0; \
+                        SMP_RD_BARRIER_DEPENDS(); \
+                        while (dhd_mmc_suspend && retry++ != b) { \
+                                SMP_RD_BARRIER_DEPENDS(); \
+                                wait_event_interruptible_timeout(a, !dhd_mmc_suspend, msecs_to_jiffies(10)); \
+                        } \
+                } while (0)
+        #define DHD_PM_RESUME_WAIT(a)           _DHD_PM_RESUME_WAIT(a, 1000)
+#else
 	#define _DHD_PM_RESUME_WAIT(a, b) do {\
 			int retry = 0; \
 			SMP_RD_BARRIER_DEPENDS(); \
@@ -245,8 +263,23 @@ typedef struct dhd_cmn {
 			} \
 		} while (0)
 	#define DHD_PM_RESUME_WAIT(a) 		_DHD_PM_RESUME_WAIT(a, 200)
+#endif /* CONFIG_MACH_SAMSUNG_VARIATION_TEGRA */
+
 	#define DHD_PM_RESUME_WAIT_FOREVER(a) 	_DHD_PM_RESUME_WAIT(a, ~0)
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+
+#define DHD_PM_RESUME_RETURN_ERROR(a)   do { \
+        if (dhd_mmc_suspend) { \
+                pr_err("%s: suspend timeout\n", __func__);\
+                return a; \
+        } \
+} while (0)
+
+#else
+
 	#define DHD_PM_RESUME_RETURN_ERROR(a)	do { if (dhd_mmc_suspend) return a; } while (0)
+
+#endif
 	#define DHD_PM_RESUME_RETURN		do { if (dhd_mmc_suspend) return; } while (0)
 
 	#define DHD_SPINWAIT_SLEEP_INIT(a) DECLARE_WAIT_QUEUE_HEAD(a);

@@ -522,7 +522,9 @@ static void dhd_set_packet_filter(int value, dhd_pub_t *dhd)
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 {
+#ifndef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
 	int power_mode = PM_MAX;
+#endif
 	/* wl_pkt_filter_enable_t	enable_parm; */
 	char iovbuf[32];
 	int bcn_li_dtim = 3;
@@ -537,8 +539,10 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 				/* Kernel suspended */
 				DHD_ERROR(("%s: force extra Suspend setting \n", __FUNCTION__));
 
+#ifndef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
 				dhd_wl_ioctl_cmd(dhd, WLC_SET_PM, (char *)&power_mode,
 				                 sizeof(power_mode), TRUE, 0);
+#endif
 
 				/* Enable packet filter, only allow unicast packet to send up */
 				dhd_set_packet_filter(1, dhd);
@@ -561,9 +565,11 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 				/* Kernel resumed  */
 				DHD_TRACE(("%s: Remove extra suspend setting \n", __FUNCTION__));
 
+#ifndef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
 				power_mode = PM_FAST;
 				dhd_wl_ioctl_cmd(dhd, WLC_SET_PM, (char *)&power_mode,
 				                 sizeof(power_mode), TRUE, 0);
+#endif
 
 				/* disable pkt filter */
 				dhd_set_packet_filter(0, dhd);
@@ -3664,6 +3670,9 @@ void dhd_detach(dhd_pub_t *dhdp)
 				free_netdev(ifp->net);
 				ifp->net = NULL;
 			}
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+                mdelay(50);
+#endif
 			MFREE(dhd->pub.osh, ifp, sizeof(*ifp));
 			dhd->iflist[0] = NULL;
 		}
@@ -3682,6 +3691,10 @@ void dhd_detach(dhd_pub_t *dhdp)
 		if (dhd->thr_wdt_ctl.thr_pid >= 0) {
 			PROC_STOP(&dhd->thr_wdt_ctl);
 		}
+
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+                mdelay(50);
+#endif
 
 		if (dhd->thr_dpc_ctl.thr_pid >= 0) {
 			PROC_STOP(&dhd->thr_dpc_ctl);
