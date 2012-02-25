@@ -3,7 +3,7 @@ DHDCFLAGS = -Wall -Wstrict-prototypes -Dlinux -DBCMDRIVER                     \
 	-DBCMDONGLEHOST -DUNRELEASEDCHIP -DBCMDMA32 -DWLBTAMP -DBCMFILEIMAGE  \
 	-DDHDTHREAD -DDHD_GPL -DDHD_SCHED -DDHD_DEBUG -DSDTEST -DBDC -DTOE    \
 	-DDHD_BCMEVENTS -DSHOW_EVENTS -DDONGLEOVERLAYS -DBCMDBG               \
-	-DCUSTOMER_HW2 -DCUSTOM_OOB_GPIO_NUM=2 -DOOB_INTR_ONLY -DHW_OOB       \
+	-DCUSTOMER_HW2                                                        \
 	-DMMC_SDIO_ABORT -DBCMSDIO -DBCMLXSDMMC -DBCMPLATFORM_BUS -DWLP2P     \
 	-DNEW_COMPAT_WIRELESS -DWIFI_ACT_FRAME -DARP_OFFLOAD_SUPPORT          \
 	-DCSCAN -DGET_CUSTOM_MAC_ENABLE -DPKT_FILTER_SUPPORT                  \
@@ -15,6 +15,20 @@ DHDOFILES = aiutils.o bcmsdh_sdmmc_linux.o dhd_linux.o siutils.o bcmutils.o   \
 	bcmsdh.o dhd_cdc.o bcmsdh_linux.o dhd_common.o linux_osl.o            \
 	bcmsdh_sdmmc.o dhd_custom_gpio.o sbutils.o wldev_common.o             \
 	wl_android.o dhd_cfg80211.o wlan_gpio.o
+
+ifeq ($(CONFIG_BCMDHD_WIFI_CONTROL_FUNC),y)
+DHDCFLAGS += -DCONFIG_WIFI_CONTROL_FUNC
+else
+ifneq ($(CONFIG_MACH_SAMSUNG_VARIATION_TEGRA),y)
+DHDCFLAGS += -DCUSTOM_OOB_GPIO_NUM=2
+endif
+endif
+
+ifeq ($(CONFIG_BCMDHD_HW_OOB),y)
+DHDCFLAGS += -DHW_OOB -DOOB_INTR_ONLY
+else
+DHDCFLAGS += -DSDIO_ISR_THREAD
+endif
 
 ifneq ($(CONFIG_BCMDHD_BCM4330B1_FW),y)
 DHDCFLAGS += -DKEEP_ALIVE
