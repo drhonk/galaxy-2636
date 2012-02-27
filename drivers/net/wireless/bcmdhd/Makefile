@@ -44,7 +44,7 @@ DHDCFLAGS += -DSOFTAP -DWL_WIRELESS_EXT
 endif
 ifneq ($(CONFIG_CFG80211),)
 bcmdhd-objs += wl_cfg80211.o wl_cfgp2p.o wl_linux_mon.o dhd_cfg80211.o
-DHDCFLAGS += -DWL_CFG80211
+DHDCFLAGS += -DWL_CFG80211 -DENABLE_P2P_INTERFACE
 endif
 EXTRA_CFLAGS = $(DHDCFLAGS)
 ifeq ($(CONFIG_BCMDHD),m)
