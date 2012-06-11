@@ -35,7 +35,6 @@
 #endif
 
 #include <asm/cacheflush.h>
-#include <asm/leds.h>
 #include <asm/processor.h>
 #include <asm/system.h>
 #include <asm/thread_notify.h>
@@ -175,8 +174,8 @@ void cpu_idle(void)
 
 	/* endless idle loop with no priority at all */
 	while (1) {
+		idle_notifier_call_chain(IDLE_START);
 		tick_nohz_stop_sched_tick(1);
-		leds_event(led_idle_start);
 		while (!need_resched()) {
 #ifdef CONFIG_HOTPLUG_CPU
 			if (cpu_is_offline(smp_processor_id()))
@@ -200,8 +199,8 @@ void cpu_idle(void)
 				local_irq_enable();
 			}
 		}
-		leds_event(led_idle_end);
 		tick_nohz_restart_sched_tick();
+		idle_notifier_call_chain(IDLE_END);
 		preempt_enable_no_resched();
 		schedule();
 		preempt_disable();
@@ -467,6 +466,8 @@ copy_thread(unsigned long clone_flags, unsigned long stack_start,
 
 	if (clone_flags & CLONE_SETTLS)
 		thread->tp_value = regs->ARM_r3;
+
+	thread_notify(THREAD_NOTIFY_COPY, thread);
 
 	return 0;
 }
